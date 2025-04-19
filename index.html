@@ -2,330 +2,532 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Open in Facebook</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Magic Link - Open Social Apps</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generate QR codes and deep links for social media profiles">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <script>
-        // ——— CONFIG ———
-        const params = new URLSearchParams(location.search);
-        const pageId = params.get('id') || 'YOUR_DEFAULT_PAGE_ID';
-        const profileName = params.get('name') || 'Facebook Profile';
-        // expose to global so the bottom script can see it
-        window.webLink = `https://www.facebook.com/profile.php?id=${pageId}`;
-        window.iosLink = `fb://profile/${pageId}`;
-        window.iosPageLink = `fb://page/${pageId}`; // Alternative scheme
-        window.androidLink = `intent://profile/${pageId}#Intent;scheme=fb;package=com.facebook.katana;end`;
-
-        // App link with universal + app links (Meta's recommended approach)
-        window.appLink = `https://www.facebook.com/${pageId}`;
-
-        let hasRedirected = false;
-
-        function openFacebook() {
-            if (params.get('direct') === 'true') {
-                openAppNow();
-            } else {
-                // Show landing page first
-                document.getElementById('landing-page').style.display = 'block';
-                document.getElementById('redirect-page').style.display = 'none';
-
-                // Update profile name if provided
-                document.getElementById('profile-name').textContent = profileName;
-            }
-        }
-
-        function openAppNow() {
-            // Show redirect page
-            document.getElementById('landing-page').style.display = 'none';
-            document.getElementById('redirect-page').style.display = 'block';
-
-            const ua = navigator.userAgent.toLowerCase();
-            const now = Date.now();
-            hasRedirected = false;
-
-            if (/iphone|ipad|ipod/.test(ua)) {
-                // iOS: Try multiple methods to open the app
-                tryOpenAppIOS();
-            } else if (/android/.test(ua)) {
-                // Android: Use intent URI
-                window.location.href = window.androidLink;
-            } else {
-                // Desktop: Go to web version
-                window.location.href = window.webLink;
-                return;
-            }
-
-            // Fallback to web page if app didn't open
-            setTimeout(() => {
-                if (!hasRedirected) {
-                    hasRedirected = true;
-                    window.location.href = window.webLink;
-                }
-            }, 2500);
-        }
-
-        function tryOpenAppIOS() {
-            // Method 1: Try using Meta's App Links (preferred modern method)
-            // This relies on Facebook having proper Universal Links configuration
-            window.location.href = window.appLink;
-
-            // Method 2: Try multiple URL schemes with different approaches
-            setTimeout(() => {
-                if (!hasRedirected) {
-                    // Try iframe method with the primary scheme
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = window.iosLink;
-                    document.body.appendChild(iframe);
-
-                    // Method 3: Try window.location with alternate scheme
-                    setTimeout(() => {
-                        if (!hasRedirected) {
-                            window.location.href = window.iosPageLink;
+        // Configure Tailwind
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        facebook: {
+                            light: '#1877F2',
+                            dark: '#166FE5'
+                        },
+                        instagram: {
+                            light: '#E4405F',
+                            dark: '#C13584'
                         }
-                    }, 300);
-
-                    // Method 4: Try window.open
-                    setTimeout(() => {
-                        if (!hasRedirected) {
-                            window.open(window.iosLink, '_self');
-                        }
-                    }, 600);
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                    }
                 }
-            }, 300);
-
-            // Add a hidden link and trigger a click (sometimes helps on iOS)
-            const hiddenLink = document.createElement('a');
-            hiddenLink.setAttribute('href', window.iosLink);
-            hiddenLink.style.display = 'none';
-            document.body.appendChild(hiddenLink);
-
-            setTimeout(() => {
-                if (!hasRedirected) {
-                    hiddenLink.click();
-                }
-            }, 900);
-        }
-
-        window.addEventListener('load', openFacebook);
-
-        // Track page visibility changes to detect app switch
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                hasRedirected = true;
             }
-        });
+        }
     </script>
+
     <style>
-        :root {
-            --primary: #1877F2;
-            --primary-dark: #166FE5;
-            --text-dark: #1C1E21;
-            --text-light: #65676B;
-            --white: #FFFFFF;
-            --light-gray: #F0F2F5;
-            --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+        .gradient-background {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Facebook gradient */
+        .facebook-gradient {
+            background: linear-gradient(135deg, #1877F2 0%, #166FE5 100%);
         }
 
-        body {
-            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--light-gray);
-            min-height: 100vh;
-            color: var(--text-dark);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+        /* Instagram gradient */
+        .instagram-gradient {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
         }
 
-        #landing-page {
-            width: 100%;
-            max-width: 500px;
-            background-color: var(--white);
-            border-radius: 8px;
-            box-shadow: var(--box-shadow);
-            overflow: hidden;
-            animation: fadeIn 0.5s ease-in-out;
+        /* Animation for the arrow */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .header {
-            background-color: var(--primary);
-            padding: 20px;
-            text-align: center;
-            color: var(--white);
-        }
-
-        .header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-        }
-
-        .profile-section {
-            padding: 25px;
-            text-align: center;
-        }
-
-        .profile-pic {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            margin: 0 auto 15px;
-            background-color: var(--light-gray);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        }
-
-        .profile-pic i {
-            font-size: 50px;
-            color: #777;
-        }
-
-        .profile-section h2 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: var(--text-dark);
-        }
-
-        .profile-section p {
-            color: var(--text-light);
-            margin-bottom: 20px;
-        }
-
-        .action-btn {
-            display: inline-block;
-            padding: 10px 36px;
-            background-color: var(--primary);
-            color: var(--white);
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            transition: background-color 0.2s ease;
-            cursor: pointer;
-        }
-
-        .action-btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .facebook-icon {
-            margin-right: 8px;
-        }
-
-        .footer {
-            background-color: var(--light-gray);
-            padding: 12px;
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-
-        /* Redirect page styles */
-        #redirect-page {
-            display: none;
-            text-align: center;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: var(--box-shadow);
-            max-width: 400px;
-        }
-
-        #redirect-page p {
-            margin: 15px 0;
-            color: var(--text-dark);
-        }
-
-        #manual {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        #manual:hover {
-            text-decoration: underline;
-        }
-
-        .loader {
-            border: 4px solid var(--light-gray);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .float-animation {
+            animation: float 2s ease-in-out infinite;
         }
     </style>
-
-    <!-- Add Meta App Links tags -->
-    <meta property="al:ios:url" content="fb://profile/YOUR_DEFAULT_PAGE_ID" />
-    <meta property="al:ios:app_store_id" content="284882215" />
-    <meta property="al:ios:app_name" content="Facebook" />
-    <meta property="al:android:url" content="fb://profile/YOUR_DEFAULT_PAGE_ID" />
-    <meta property="al:android:package" content="com.facebook.katana" />
-    <meta property="al:android:app_name" content="Facebook" />
 </head>
-<body>
-<!-- Landing Page -->
-<div id="landing-page">
-    <div class="header">
-        <h1>Connect on Facebook</h1>
-    </div>
 
-    <div class="profile-section">
-        <div class="profile-pic">
-            <i class="fas fa-user"></i>
+<body class="gradient-background min-h-screen font-sans text-gray-100">
+<!-- Header -->
+<header class="px-6 py-4">
+    <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-bold flex items-center">
+            <span class="text-purple-400 mr-2"><i class="fas fa-link"></i></span>
+            <span>Magic<span class="text-blue-400">Link</span></span>
+        </h1>
+
+        <div class="flex space-x-2">
+            <a href="https://github.com/konigt6905/magicLink" target="_blank" class="p-2 rounded-full hover:bg-white/10 transition-colors">
+                <i class="fab fa-github text-gray-300 text-xl"></i>
+            </a>
         </div>
-
-        <h2 id="profile-name">Facebook Profile</h2>
-        <p>View this profile in the Facebook app</p>
-
-        <button onclick="openAppNow()" class="action-btn">
-            <i class="fab fa-facebook-f facebook-icon"></i> Open Profile
-        </button>
     </div>
+</header>
 
-    <div class="footer">
-        <p>This will open the Facebook app if installed</p>
+<main class="container mx-auto px-4 py-8">
+    <!-- App Selection & Input Form -->
+    <section id="landing-page" class="max-w-2xl mx-auto bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden mb-8">
+        <div class="p-6">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Create Your Magic Link</h2>
+                <p class="text-gray-400">Generate a QR code and deep link for Facebook or Instagram profiles</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Facebook Option -->
+                <div id="facebook-option" onclick="selectPlatform('facebook')" class="cursor-pointer relative group overflow-hidden rounded-xl border border-white/10 hover:border-facebook-light/50 p-5 transition-all duration-300 bg-white/5 hover:bg-white/10">
+                    <div class="hidden absolute inset-0 facebook-gradient opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <div class="p-4 bg-facebook-light/10 rounded-full border border-facebook-light/30 transition-colors group-hover:bg-facebook-light/20">
+                            <i class="fab fa-facebook-f text-facebook-light text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-100">Facebook</h3>
+                        <p class="text-gray-400 text-sm text-center">Open profiles and pages in the Facebook app</p>
+                    </div>
+                </div>
+
+                <!-- Instagram Option -->
+                <div id="instagram-option" onclick="selectPlatform('instagram')" class="cursor-pointer relative group overflow-hidden rounded-xl border border-white/10 hover:border-instagram-light/50 p-5 transition-all duration-300 bg-white/5 hover:bg-white/10">
+                    <div class="hidden absolute inset-0 instagram-gradient opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <div class="p-4 bg-instagram-light/10 rounded-full border border-instagram-light/30 transition-colors group-hover:bg-instagram-light/20">
+                            <i class="fab fa-instagram text-instagram-light text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-100">Instagram</h3>
+                        <p class="text-gray-400 text-sm text-center">Open profiles in the Instagram app</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Form -->
+            <form id="link-form" class="space-y-6">
+                <div id="platform-input-container" class="hidden">
+                    <label for="profile-id" class="block text-sm font-medium text-gray-400 mb-2">
+                        <span id="profile-label">Profile ID or Username</span>
+                        <button type="button" id="help-button" class="ml-2 text-blue-400 hover:text-blue-300 focus:outline-none" onclick="toggleHelp()">
+                            <i class="fas fa-question-circle"></i>
+                        </button>
+                    </label>
+
+                    <div id="help-text" class="hidden mb-3 p-3 bg-blue-900/30 border border-blue-500/30 rounded-md text-sm text-gray-300">
+                        <p id="facebook-help" class="hidden">
+                            <strong>For Facebook:</strong> Enter the numeric profile ID (e.g., 501101050076694) or page username. Find your profile ID by viewing page source on your profile and searching for "entity_id".
+                        </p>
+                        <p id="instagram-help" class="hidden">
+                            <strong>For Instagram:</strong> Enter your Instagram username without the @ symbol (e.g., "zuck").
+                        </p>
+                    </div>
+
+                    <div class="flex">
+                        <div class="relative flex-grow">
+                            <div id="input-prefix" class="hidden absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500"></div>
+                            <input type="text" id="profile-id" name="profile-id" class="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white" placeholder="Enter ID or username" required>
+                        </div>
+                        <button type="submit" class="ml-3 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                            Generate
+                        </button>
+                    </div>
+                </div>
+
+                <div id="platform-select-message" class="text-center p-4 rounded-lg bg-white/5 border border-white/10">
+                    <p class="text-gray-300">Select a platform above to continue</p>
+                    <div class="mt-2 text-blue-400 float-animation">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Results Section (hidden initially) -->
+    <section id="results-page" class="hidden max-w-2xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+            <div class="p-6">
+                <div class="mb-6 flex items-center">
+                    <button onclick="resetForm()" class="mr-4 flex items-center text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span>Back</span>
+                    </button>
+                    <h2 class="text-2xl font-bold" id="result-title">Your Magic Link</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- QR Code Column -->
+                    <div class="flex flex-col items-center">
+                        <div id="qrcode-container" class="bg-white p-4 rounded-lg mb-4 w-64 h-64 flex items-center justify-center">
+                            <div id="qrcode" class="w-full h-full"></div>
+                        </div>
+                        <button onclick="downloadQR()" class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+                            <i class="fas fa-download"></i>
+                            <span>Download QR Code</span>
+                        </button>
+                    </div>
+
+                    <!-- Link Info Column -->
+                    <div class="flex flex-col">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">Magic Link</h3>
+                            <div class="relative">
+                                <input type="text" id="magic-link" readonly class="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg focus:outline-none text-white" value="">
+                                <button onclick="copyToClipboard('magic-link')" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                            <p class="mt-2 text-sm text-gray-400">Share this link to open directly in the app</p>
+                        </div>
+
+                        <div class="mb-6">
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">Test It Now</h3>
+                            <a id="open-app-link" href="#" class="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg transition-colors" target="_blank">
+                                <i id="app-icon" class="fab fa-facebook-f mr-2"></i>
+                                <span>Open in App</span>
+                            </a>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">How It Works</h3>
+                            <p class="text-sm text-gray-400">On mobile devices, this link attempts to open the native app. If the app isn't installed, it opens the website instead.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="container mx-auto px-4 py-6 mt-8">
+    <div class="flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
+        <p>&copy; 2025 MagicLink - No affiliation with Facebook or Instagram</p>
+        <div class="mt-4 md:mt-0">
+            <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy</a>
+            <a href="#" class="text-gray-400 hover:text-white mx-2">Terms</a>
+            <a href="#" class="text-gray-400 hover:text-white mx-2">Contact</a>
+        </div>
     </div>
-</div>
+</footer>
 
-<!-- Redirect Page -->
-<div id="redirect-page">
-    <div class="loader"></div>
-    <p>Opening Facebook…</p>
-    <p>
-        If it doesn't automatically open,
-        <a id="manual" href="#">click here</a>.
-    </p>
+<!-- Redirect page for app opening (hidden) -->
+<div id="redirect-page" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/90 backdrop-blur-md hidden">
+    <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-8 max-w-md w-full shadow-2xl">
+        <div class="text-center">
+            <div class="w-16 h-16 mx-auto mb-6 rounded-full border-4 border-t-blue-400 border-blue-400/30 animate-spin"></div>
+            <h2 class="text-2xl font-bold mb-2" id="opening-text">Opening Facebook...</h2>
+            <p class="text-gray-300 mb-6" id="redirect-message">The app should open automatically on your device</p>
+
+            <div class="mb-6">
+                <button id="manual-open-btn" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                    <i class="fas fa-external-link-alt mr-2"></i>
+                    <span>Open Manually</span>
+                </button>
+            </div>
+
+            <button onclick="hideRedirectPage()" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times mr-1"></i> Close
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
-    // point the manual link at the web fallback
-    document.getElementById('manual').href = window.webLink;
+    // Global variables
+    let selectedPlatform = null;
+    let generatedLink = null;
+    let hasRedirected = false;
+    let qrCode = null;
 
-    // Update Meta tags dynamically with the correct ID
-    document.querySelector('meta[property="al:ios:url"]').setAttribute('content', window.iosLink);
-    document.querySelector('meta[property="al:android:url"]').setAttribute('content', `fb://profile/${pageId}`);
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        const platform = urlParams.get('platform') || 'facebook';
+
+        if (id) {
+            // Direct link mode - handle deep linking
+            selectedPlatform = platform;
+            handleDirectLink(id, platform);
+        }
+
+        // Set up event listeners
+        document.getElementById('link-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            generateMagicLink();
+        });
+    });
+
+    // Handle direct linking (when accessing with parameters)
+    function handleDirectLink(id, platform) {
+        // Show redirect page
+        document.getElementById('redirect-page').classList.remove('hidden');
+
+        // Update UI based on platform
+        if (platform === 'instagram') {
+            document.getElementById('opening-text').innerText = 'Opening Instagram...';
+            document.getElementById('app-icon').classList.remove('fa-facebook-f');
+            document.getElementById('app-icon').classList.add('fa-instagram');
+        }
+
+        // Generate the appropriate link
+        const appLink = createAppLink(id, platform);
+        document.getElementById('manual-open-btn').href = appLink;
+
+        // Try to open the app
+        openApp(id, platform);
+    }
+
+    // Platform selection
+    function selectPlatform(platform) {
+        selectedPlatform = platform;
+
+        // Update UI
+        document.getElementById('facebook-option').classList.remove('ring-2', 'ring-facebook-light');
+        document.getElementById('instagram-option').classList.remove('ring-2', 'ring-instagram-light');
+
+        document.getElementById('platform-select-message').classList.add('hidden');
+        document.getElementById('platform-input-container').classList.remove('hidden');
+
+        if (platform === 'facebook') {
+            document.getElementById('facebook-option').classList.add('ring-2', 'ring-facebook-light');
+            document.getElementById('profile-label').innerText = 'Facebook Profile ID or Username';
+            document.getElementById('facebook-help').classList.remove('hidden');
+            document.getElementById('instagram-help').classList.add('hidden');
+            document.getElementById('input-prefix').classList.add('hidden');
+            document.getElementById('open-app-link').classList.remove('instagram-gradient');
+            document.getElementById('open-app-link').classList.add('facebook-gradient');
+            document.getElementById('app-icon').classList.remove('fa-instagram');
+            document.getElementById('app-icon').classList.add('fa-facebook-f');
+        } else {
+            document.getElementById('instagram-option').classList.add('ring-2', 'ring-instagram-light');
+            document.getElementById('profile-label').innerText = 'Instagram Username';
+            document.getElementById('facebook-help').classList.add('hidden');
+            document.getElementById('instagram-help').classList.remove('hidden');
+            document.getElementById('input-prefix').classList.remove('hidden');
+            document.getElementById('input-prefix').innerText = '@';
+            document.getElementById('open-app-link').classList.remove('facebook-gradient');
+            document.getElementById('open-app-link').classList.add('instagram-gradient');
+            document.getElementById('app-icon').classList.remove('fa-facebook-f');
+            document.getElementById('app-icon').classList.add('fa-instagram');
+        }
+    }
+
+    // Toggle help text
+    function toggleHelp() {
+        const helpText = document.getElementById('help-text');
+        helpText.classList.toggle('hidden');
+    }
+
+    // Generate magic link
+    function generateMagicLink() {
+        const profileId = document.getElementById('profile-id').value.trim();
+
+        if (!profileId || !selectedPlatform) {
+            alert('Please select a platform and enter a profile ID or username');
+            return;
+        }
+
+        // Generate link based on platform
+        const baseUrl = window.location.href.split('?')[0];
+        const magicLink = `${baseUrl}?id=${encodeURIComponent(profileId)}&platform=${selectedPlatform}`;
+
+        // Store globally
+        generatedLink = magicLink;
+
+        // Update UI
+        document.getElementById('landing-page').classList.add('hidden');
+        document.getElementById('results-page').classList.remove('hidden');
+
+        document.getElementById('magic-link').value = magicLink;
+        document.getElementById('open-app-link').href = magicLink;
+
+        if (selectedPlatform === 'facebook') {
+            document.getElementById('result-title').innerText = 'Your Facebook Magic Link';
+        } else {
+            document.getElementById('result-title').innerText = 'Your Instagram Magic Link';
+        }
+
+        // Generate QR code
+        generateQRCode(magicLink);
+    }
+
+    // Generate QR code
+    function generateQRCode(link) {
+        const qrContainer = document.getElementById('qrcode');
+        qrContainer.innerHTML = '';
+
+        qrCode = new QRCode(qrContainer, {
+            text: link,
+            width: 240,
+            height: 240,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    // Download QR code
+    function downloadQR() {
+        if (!qrCode) return;
+
+        const canvas = document.querySelector('#qrcode canvas');
+        if (!canvas) return;
+
+        const link = document.createElement('a');
+        link.download = `magiclink-${selectedPlatform}-qr.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // Copy to clipboard
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        element.select();
+        document.execCommand('copy');
+
+        // Show feedback
+        const button = element.nextElementSibling;
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i>';
+
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+        }, 2000);
+    }
+
+    // Reset form and go back to landing page
+    function resetForm() {
+        document.getElementById('results-page').classList.add('hidden');
+        document.getElementById('landing-page').classList.remove('hidden');
+        document.getElementById('profile-id').value = '';
+    }
+
+    // Open app functionality
+    function openApp(id, platform) {
+        const appLink = createAppLink(id, platform);
+        const webLink = createWebLink(id, platform);
+
+        const ua = navigator.userAgent.toLowerCase();
+        hasRedirected = false;
+
+        // Update manual button
+        document.getElementById('manual-open-btn').href = appLink;
+
+        if (/iphone|ipad|ipod/.test(ua)) {
+            // iOS handling
+            tryOpenIOSApp(appLink, webLink, platform);
+        } else if (/android/.test(ua)) {
+            // Android handling
+            if (platform === 'facebook') {
+                // Use intent URI for Facebook on Android
+                const intentUri = `intent://profile/${id}#Intent;scheme=fb;package=com.facebook.katana;end`;
+                window.location.href = intentUri;
+            } else {
+                // Use intent URI for Instagram on Android
+                const intentUri = `intent://instagram.com/${id}/#Intent;scheme=https;package=com.instagram.android;end`;
+                window.location.href = intentUri;
+            }
+        } else {
+            // Desktop or unsupported - go to web version
+            window.location.href = webLink;
+            return;
+        }
+
+        // Fallback to web page if app didn't open
+        setTimeout(() => {
+            if (!hasRedirected) {
+                hasRedirected = true;
+                window.location.href = webLink;
+            }
+        }, 2500);
+    }
+
+    // Try multiple methods to open app on iOS
+    function tryOpenIOSApp(appLink, webLink, platform) {
+        // Method 1: Try using Universal Links
+        window.location.href = appLink;
+
+        // Method 2: Try iframe method with URL scheme
+        setTimeout(() => {
+            if (!hasRedirected) {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = appLink;
+                document.body.appendChild(iframe);
+
+                // Method 3: Try window.open
+                setTimeout(() => {
+                    if (!hasRedirected) {
+                        window.open(appLink, '_self');
+                    }
+                }, 300);
+            }
+        }, 300);
+    }
+
+    // Create app-specific links
+    function createAppLink(id, platform) {
+        if (platform === 'facebook') {
+            // Try to determine if ID is numeric or a username
+            const isNumeric = /^\d+$/.test(id);
+
+            if (isNumeric) {
+                return `fb://profile/${id}`;
+            } else {
+                return `fb://page/${id}`;
+            }
+        } else {
+            // Instagram
+            return `instagram://user?username=${id}`;
+        }
+    }
+
+    function createWebLink(id, platform) {
+        if (platform === 'facebook') {
+            // Try to determine if ID is numeric or a username
+            const isNumeric = /^\d+$/.test(id);
+
+            if (isNumeric) {
+                return `https://www.facebook.com/profile.php?id=${id}`;
+            } else {
+                return `https://www.facebook.com/${id}`;
+            }
+        } else {
+            // Instagram
+            return `https://www.instagram.com/${id}/`;
+        }
+    }
+
+    // Hide redirect page
+    function hideRedirectPage() {
+        document.getElementById('redirect-page').classList.add('hidden');
+    }
+
+    // Track page visibility changes to detect app switch
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            hasRedirected = true;
+        }
+    });
 </script>
 </body>
 </html>
