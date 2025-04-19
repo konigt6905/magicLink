@@ -33,6 +33,10 @@
                         google: {
                             light: '#EA4335',
                             dark: '#C53929'
+                        },
+                        custom: {
+                            light: '#8B5CF6',
+                            dark: '#7C3AED'
                         }
                     },
                     animation: {
@@ -63,6 +67,11 @@
         /* Google gradient */
         .google-gradient {
             background: linear-gradient(135deg, #EA4335 0%, #C53929 100%);
+        }
+
+        /* Custom gradient */
+        .custom-gradient {
+            background: linear-gradient(135deg, #8B5CF6 0%, #4F46E5 100%);
         }
 
         /* Animation for the arrow */
@@ -142,7 +151,7 @@
                 <p class="text-gray-400">Generate a QR code and deep link for social profiles and business reviews</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Facebook Option -->
                 <div id="facebook-option" onclick="selectPlatform('facebook')" class="cursor-pointer relative group overflow-hidden rounded-xl border border-white/10 hover:border-facebook-light/50 p-5 transition-all duration-300 bg-white/5 hover:bg-white/10">
                     <div class="hidden absolute inset-0 facebook-gradient opacity-0 group-hover:opacity-10 transition-opacity"></div>
@@ -178,6 +187,18 @@
                         <p class="text-gray-400 text-sm text-center">Open direct review page for businesses</p>
                     </div>
                 </div>
+
+                <!-- Custom Website Option -->
+                <div id="custom-option" onclick="selectPlatform('custom')" class="cursor-pointer relative group overflow-hidden rounded-xl border border-white/10 hover:border-purple-500/50 p-5 transition-all duration-300 bg-white/5 hover:bg-white/10">
+                    <div class="hidden absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <div class="p-4 bg-purple-500/10 rounded-full border border-purple-500/30 transition-colors group-hover:bg-purple-500/20">
+                            <i class="fas fa-globe text-purple-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-100">Custom URL</h3>
+                        <p class="text-gray-400 text-sm text-center">Generate QR code for any website URL</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Input Form -->
@@ -203,6 +224,9 @@
                             <br>2. Enter the business name in the search box
                             <br>3. Select the correct business from the results
                             <br>4. The Place ID will appear in the info window (e.g., "ChIJeYOr1FDfE0cRT0Pg74cnsKE")
+                        </p>
+                        <p id="custom-help" class="hidden">
+                            <strong>For Custom URL:</strong> Enter any website URL you want to convert to a QR code. Make sure to include the full URL with http:// or https:// prefix (e.g., "https://www.example.com").
                         </p>
                     </div>
 
@@ -285,7 +309,7 @@
 
 <footer class="container mx-auto px-4 py-6 mt-8">
     <div class="flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
-        <p>&copy; 2025 MagicLink - No affiliation with Facebook, Instagram, or Google</p>
+        <p>&copy; 2025 MagicLink - Generate QR codes for social media and websites</p>
         <div class="mt-4 md:mt-0">
             <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy</a>
             <a href="#" class="text-gray-400 hover:text-white mx-2">Terms</a>
@@ -391,6 +415,7 @@
         document.getElementById('facebook-option').classList.remove('ring-2', 'ring-facebook-light');
         document.getElementById('instagram-option').classList.remove('ring-2', 'ring-instagram-light');
         document.getElementById('google-option').classList.remove('ring-2', 'ring-google-light');
+        document.getElementById('custom-option').classList.remove('ring-2', 'ring-purple-500');
 
         document.getElementById('platform-select-message').classList.add('hidden');
         document.getElementById('platform-input-container').classList.remove('hidden');
@@ -399,10 +424,11 @@
         document.getElementById('facebook-help').classList.add('hidden');
         document.getElementById('instagram-help').classList.add('hidden');
         document.getElementById('google-help').classList.add('hidden');
+        document.getElementById('custom-help').classList.add('hidden');
 
         // Reset app-specific styling
-        document.getElementById('open-app-link').classList.remove('facebook-gradient', 'instagram-gradient', 'google-gradient');
-        document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-instagram', 'fa-google');
+        document.getElementById('open-app-link').classList.remove('facebook-gradient', 'instagram-gradient', 'google-gradient', 'custom-gradient');
+        document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-instagram', 'fa-google', 'fa-globe');
 
         if (platform === 'facebook') {
             document.getElementById('facebook-option').classList.add('ring-2', 'ring-facebook-light');
@@ -411,6 +437,7 @@
             document.getElementById('input-prefix').classList.add('hidden');
             document.getElementById('open-app-link').classList.add('facebook-gradient');
             document.getElementById('app-icon').classList.add('fa-facebook-f');
+            document.getElementById('profile-id').placeholder = 'Enter ID or username';
         } else if (platform === 'instagram') {
             document.getElementById('instagram-option').classList.add('ring-2', 'ring-instagram-light');
             document.getElementById('profile-label').innerText = 'Instagram Username';
@@ -419,6 +446,7 @@
             document.getElementById('input-prefix').innerText = '';
             document.getElementById('open-app-link').classList.add('instagram-gradient');
             document.getElementById('app-icon').classList.add('fa-instagram');
+            document.getElementById('profile-id').placeholder = 'Enter username without @';
         } else if (platform === 'google') {
             document.getElementById('google-option').classList.add('ring-2', 'ring-google-light');
             document.getElementById('profile-label').innerText = 'Google Place ID';
@@ -426,6 +454,15 @@
             document.getElementById('input-prefix').classList.add('hidden');
             document.getElementById('open-app-link').classList.add('google-gradient');
             document.getElementById('app-icon').classList.add('fa-google');
+            document.getElementById('profile-id').placeholder = 'Enter Google Place ID';
+        } else if (platform === 'custom') {
+            document.getElementById('custom-option').classList.add('ring-2', 'ring-purple-500');
+            document.getElementById('profile-label').innerText = 'Website URL';
+            document.getElementById('custom-help').classList.remove('hidden');
+            document.getElementById('input-prefix').classList.add('hidden');
+            document.getElementById('open-app-link').classList.add('custom-gradient');
+            document.getElementById('app-icon').classList.add('fa-globe');
+            document.getElementById('profile-id').placeholder = 'Enter full URL (https://...)';
         }
     }
 
@@ -440,15 +477,23 @@
         const profileId = document.getElementById('profile-id').value.trim();
 
         if (!profileId || !selectedPlatform) {
-            alert('Please select a platform and enter a profile ID or username');
+            alert('Please select a platform and enter the required information');
             return;
         }
 
         let magicLink;
 
-        // For Google Reviews, create a direct review link
+        // Handle different platform types
         if (selectedPlatform === 'google') {
+            // For Google Reviews, create a direct review link
             magicLink = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(profileId)}`;
+        } else if (selectedPlatform === 'custom') {
+            // For custom URLs, use the URL directly
+            // Make sure URL has proper format
+            magicLink = profileId;
+            if (!magicLink.startsWith('http://') && !magicLink.startsWith('https://')) {
+                magicLink = 'https://' + magicLink;
+            }
         } else {
             // For social platforms, generate link based on our URL
             const baseUrl = window.location.href.split(/[?#]/)[0];
@@ -465,11 +510,19 @@
         document.getElementById('magic-link').value = magicLink;
         document.getElementById('open-app-link').href = magicLink;
 
-        // Set up the "Open in App" button to directly trigger the app opening logic
-        document.getElementById('open-app-link').addEventListener('click', function(e) {
-            e.preventDefault();
-            openApp(profileId, selectedPlatform);
-        });
+        // Set up the "Open in App" button - for custom URLs, it's just a direct link
+        if (selectedPlatform === 'custom') {
+            document.getElementById('open-app-link').addEventListener('click', function(e) {
+                // Don't prevent default to allow normal navigation
+                // This just opens the URL directly
+            });
+        } else {
+            // For other platforms, use our app opening logic
+            document.getElementById('open-app-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                openApp(profileId, selectedPlatform);
+            });
+        }
 
         // Update result title based on platform
         if (selectedPlatform === 'facebook') {
@@ -478,6 +531,8 @@
             document.getElementById('result-title').innerText = 'Your Instagram Magic Link';
         } else if (selectedPlatform === 'google') {
             document.getElementById('result-title').innerText = 'Your Google Review Link';
+        } else if (selectedPlatform === 'custom') {
+            document.getElementById('result-title').innerText = 'Your Custom QR Code';
         }
 
         // Generate QR code
@@ -540,16 +595,20 @@
         // Update text based on platform
         if (platform === 'facebook') {
             document.getElementById('opening-text').innerText = 'Opening Facebook...';
-            document.getElementById('app-icon').classList.remove('fa-instagram', 'fa-google');
+            document.getElementById('app-icon').classList.remove('fa-instagram', 'fa-google', 'fa-globe');
             document.getElementById('app-icon').classList.add('fa-facebook-f');
         } else if (platform === 'instagram') {
             document.getElementById('opening-text').innerText = 'Opening Instagram...';
-            document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-google');
+            document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-google', 'fa-globe');
             document.getElementById('app-icon').classList.add('fa-instagram');
         } else if (platform === 'google') {
             document.getElementById('opening-text').innerText = 'Opening Google Review...';
-            document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-instagram');
+            document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-instagram', 'fa-globe');
             document.getElementById('app-icon').classList.add('fa-google');
+        } else if (platform === 'custom') {
+            document.getElementById('opening-text').innerText = 'Opening Website...';
+            document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-instagram', 'fa-google');
+            document.getElementById('app-icon').classList.add('fa-globe');
         }
 
         // Prevent body scrolling
@@ -592,6 +651,13 @@
             webLink = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(id)}`;
             // There's no direct deep link for Google reviews, so we use the web URL
             appLink = webLink;
+        } else if (platform === 'custom') {
+            // For custom URLs, just use the URL directly
+            webLink = id;
+            if (!webLink.startsWith('http://') && !webLink.startsWith('https://')) {
+                webLink = 'https://' + webLink;
+            }
+            appLink = webLink;
         } else {
             appLink = createAppLink(id, platform);
             webLink = createWebLink(id, platform);
@@ -603,8 +669,8 @@
         // Update manual button to always use web version as fallback
         document.getElementById('manual-open-btn').href = webLink;
 
-        // For Google Reviews, we simply redirect to the web URL since there's no special app handling needed
-        if (platform === 'google') {
+        // For Google Reviews or custom URLs, we simply redirect to the web URL
+        if (platform === 'google' || platform === 'custom') {
             window.location.href = webLink;
             return;
         }
@@ -736,6 +802,13 @@
         } else if (platform === 'google') {
             // Google Review
             return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(id)}`;
+        } else if (platform === 'custom') {
+            // Custom URL - ensure proper formatting
+            let url = id;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            return url;
         }
     }
 
