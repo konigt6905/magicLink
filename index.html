@@ -333,7 +333,7 @@
             document.getElementById('facebook-help').classList.add('hidden');
             document.getElementById('instagram-help').classList.remove('hidden');
             document.getElementById('input-prefix').classList.remove('hidden');
-            document.getElementById('input-prefix').innerText = '';
+            document.getElementById('input-prefix').innerText = '@';
             document.getElementById('open-app-link').classList.remove('facebook-gradient');
             document.getElementById('open-app-link').classList.add('instagram-gradient');
             document.getElementById('app-icon').classList.remove('fa-facebook-f');
@@ -438,6 +438,51 @@
         document.getElementById('profile-id').value = '';
     }
 
+    // Specialized function for opening Facebook on Android
+    function openFacebookOnAndroid(id) {
+        // Get the fallback web link
+        const webLink = createWebLink(id, 'facebook');
+
+        // Method 1: Try custom URL scheme with fragment approach (works on many devices)
+        const fbSchemeUrl = `fb://page/?id=${id}`;
+
+        // Method 2: Try profile specific scheme
+        const fbProfileUrl = `fb://profile/${id}`;
+
+        // Method 3: Try intent URI with package and fallbacks (most comprehensive)
+        const intentUri = `intent://facebook.com/${id}#Intent;scheme=https;package=com.facebook.katana;S.browser_fallback_url=${encodeURIComponent(webLink)};end`;
+
+        // Method 4: Alternative intent format for older Android versions
+        const alternateIntent = `intent://profile/${id}#Intent;scheme=fb;package=com.facebook.katana;end`;
+
+        // Try the most reliable method first
+        window.location.href = intentUri;
+
+        // Sequence through other methods with delays
+        setTimeout(() => {
+            if (!hasRedirected) {
+                // Try alternate intent format
+                window.location.href = alternateIntent;
+
+                setTimeout(() => {
+                    if (!hasRedirected) {
+                        // Try profile URL
+                        window.location.href = fbProfileUrl;
+
+                        setTimeout(() => {
+                            if (!hasRedirected) {
+                                // Try page URL format
+                                window.location.href = fbSchemeUrl;
+
+                                // Final fallback to web already handled in main function
+                            }
+                        }, 300);
+                    }
+                }, 300);
+            }
+        }, 300);
+    }
+
     // Open app functionality
     function openApp(id, platform) {
         const appLink = createAppLink(id, platform);
@@ -455,18 +500,8 @@
         } else if (/android/.test(ua)) {
             // Android handling
             if (platform === 'facebook') {
-                // Try multiple methods for Facebook on Android
-
-                // First try the official intent URI
-                const intentUri = `intent://profile/${id}#Intent;scheme=fb;package=com.facebook.katana;end`;
-                window.location.href = intentUri;
-
-                // Also try the fb:// protocol for older devices
-                setTimeout(() => {
-                    if (!hasRedirected) {
-                        window.location.href = appLink;
-                    }
-                }, 300);
+                // Set up a specialized Android Facebook redirect approach
+                openFacebookOnAndroid(id);
             } else {
                 // Use intent URI for Instagram on Android
                 const intentUri = `intent://instagram.com/${id}/#Intent;scheme=https;package=com.instagram.android;end`;
@@ -587,6 +622,15 @@
     // Track page visibility changes to detect app switch
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
+            hasRedirected = true;
+        }
+    });
+
+    // Handle Android back button for better UX during app redirect attempts
+    window.addEventListener('popstate', function() {
+        // If redirecting was attempted but we're still here,
+        // mark as redirected to prevent further attempts
+        if (!hasRedirected) {
             hasRedirected = true;
         }
     });
