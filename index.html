@@ -3,54 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <title>Open in Facebook</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <script>
-        // --- CONFIGURE THIS: extract your Page‑ID or Path from the URL ---
-        // Option A: Use a query parameter, e.g. https://site.com/?id=12345
-        const params = new URLSearchParams(location.search);
-        const pageId = params.get('id') || 'YOUR_DEFAULT_PAGE_ID';
-
-        // Option B: Derive from the pathname, e.g. https://site.com/12345
-        // const pageId = location.pathname.replace(/^\/+|\/+$/g, '');
-
-        // --- BUILD THE DEEP-LINKS ---
-        const iosLink     = `fb://profile/${pageId}`;
-        const androidLink = `intent://profile/${pageId}#Intent;scheme=fb;package=com.facebook.katana;end`;
-        const webLink     = `https://www.facebook.com/profile.php?id=${pageId}`;
+        // ——— CONFIG ———
+        const params      = new URLSearchParams(location.search);
+        const pageId      = params.get('id') || 'YOUR_DEFAULT_PAGE_ID';
+        // expose to global so the bottom script can see it
+        window.webLink     = `https://www.facebook.com/profile.php?id=${pageId}`;
+        window.iosLink     = `fb://profile/${pageId}`;
+        window.androidLink = `intent://profile/${pageId}#Intent;scheme=fb;package=com.facebook.katana;end`;
 
         function openFacebook() {
             const ua = navigator.userAgent.toLowerCase();
-            let target = webLink;
+            const now = Date.now();
 
             if (/iphone|ipad|ipod/.test(ua)) {
-                target = iosLink;
+                // iOS: use an invisible iframe to trigger the fb:// scheme
+                const ifr = document.createElement('iframe');
+                ifr.style.display = 'none';
+                ifr.src = window.iosLink;
+                document.body.appendChild(ifr);
+
             } else if (/android/.test(ua)) {
-                target = androidLink;
+                // Android Chrome: intent:// URI will launch FB app or fallback
+                window.location = window.androidLink;
+
+            } else {
+                // all others: go straight to web
+                window.location = window.webLink;
+                return;
             }
 
-            const start = Date.now();
-            // Try to navigate to the deep‑link
-            window.location = target;
-
-            // If after 600ms nothing happened (i.e. app not installed),
-            // redirect to the normal web URL
+            // fallback to web page after 1s if app didn’t open
             setTimeout(() => {
-                if (Date.now() - start < 1000) {
-                    window.location = webLink;
+                if (Date.now() - now < 2000) {
+                    window.location = window.webLink;
                 }
-            }, 600);
+            }, 1000);
         }
 
-        // Kick off on load
-        window.addEventListener('load', openFacebook, false);
+        window.addEventListener('load', openFacebook);
     </script>
 </head>
 <body>
 <p>Opening Facebook…</p>
-<p>If it doesn’t automatically open, <a id="manual" href="#">click here</a>.</p>
+<p>
+    If it doesn’t automatically open,
+    <a id="manual" href="#">click here</a>.
+</p>
 <script>
-    // Update the manual link once we know the final web link
-    document.getElementById('manual').href = webLink;
+    // point the manual link at the web fallback
+    document.getElementById('manual').href = window.webLink;
 </script>
 </body>
 </html>
