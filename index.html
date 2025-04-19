@@ -258,10 +258,20 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        // Check for URL parameters
+        // Check for URL parameters (support both normal query params and hash-based params)
+        let id, platform;
+
+        // First try regular query params
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        const platform = urlParams.get('platform') || 'facebook';
+        id = urlParams.get('id');
+        platform = urlParams.get('platform') || 'facebook';
+
+        // If not found, check if using hash-based params
+        if (!id && window.location.hash) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            id = hashParams.get('id');
+            platform = hashParams.get('platform') || 'facebook';
+        }
 
         if (id) {
             // Direct link mode - handle deep linking
@@ -347,7 +357,8 @@
         }
 
         // Generate link based on platform
-        const baseUrl = window.location.href.split('?')[0];
+        // Remove any # in the base URL to ensure parameters work correctly
+        const baseUrl = window.location.href.split(/[?#]/)[0];
         const magicLink = `${baseUrl}?id=${encodeURIComponent(profileId)}&platform=${selectedPlatform}`;
 
         // Store globally
@@ -359,6 +370,12 @@
 
         document.getElementById('magic-link').value = magicLink;
         document.getElementById('open-app-link').href = magicLink;
+
+        // Set up the "Open in App" button to directly trigger the app opening logic
+        document.getElementById('open-app-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            openApp(profileId, selectedPlatform);
+        });
 
         if (selectedPlatform === 'facebook') {
             document.getElementById('result-title').innerText = 'Your Facebook Magic Link';
@@ -430,17 +447,26 @@
         hasRedirected = false;
 
         // Update manual button
-        document.getElementById('manual-open-btn').href = appLink;
+        document.getElementById('manual-open-btn').href = webLink;
 
         if (/iphone|ipad|ipod/.test(ua)) {
             // iOS handling
-            tryOpenIOSApp(appLink, webLink, platform);
+            tryOpenIOSApp(id, appLink, webLink, platform);
         } else if (/android/.test(ua)) {
             // Android handling
             if (platform === 'facebook') {
-                // Use intent URI for Facebook on Android
+                // Try multiple methods for Facebook on Android
+
+                // First try the official intent URI
                 const intentUri = `intent://profile/${id}#Intent;scheme=fb;package=com.facebook.katana;end`;
                 window.location.href = intentUri;
+
+                // Also try the fb:// protocol for older devices
+                setTimeout(() => {
+                    if (!hasRedirected) {
+                        window.location.href = appLink;
+                    }
+                }, 300);
             } else {
                 // Use intent URI for Instagram on Android
                 const intentUri = `intent://instagram.com/${id}/#Intent;scheme=https;package=com.instagram.android;end`;
@@ -462,9 +488,33 @@
     }
 
     // Try multiple methods to open app on iOS
-    function tryOpenIOSApp(appLink, webLink, platform) {
-        // Method 1: Try using Universal Links
-        window.location.href = appLink;
+    function tryOpenIOSApp(id, appLink, webLink, platform) {
+        // Method 1: Try using Universal Links with Apple's App Links / Universal Links approach
+        if (platform === 'facebook') {
+            // For Facebook, try multiple approaches
+
+            // First try the direct fb:// scheme
+            window.location.href = appLink;
+
+            // Then try alternate scheme for FB pages
+            setTimeout(() => {
+                if (!hasRedirected) {
+                    // Try page link if this is potentially a page ID
+                    const fbPageLink = `fb://page/${id}`;
+                    window.location.href = fbPageLink;
+                }
+            }, 300);
+
+            // Try profile.php link approach
+            setTimeout(() => {
+                if (!hasRedirected) {
+                    window.location.href = `https://www.facebook.com/profile.php?id=${id}`;
+                }
+            }, 600);
+        } else {
+            // For Instagram, simpler approach
+            window.location.href = appLink;
+        }
 
         // Method 2: Try iframe method with URL scheme
         setTimeout(() => {
@@ -481,7 +531,19 @@
                     }
                 }, 300);
             }
-        }, 300);
+        }, 900);
+
+        // Add a hidden link and trigger a click (sometimes helps on iOS)
+        const hiddenLink = document.createElement('a');
+        hiddenLink.setAttribute('href', appLink);
+        hiddenLink.style.display = 'none';
+        document.body.appendChild(hiddenLink);
+
+        setTimeout(() => {
+            if (!hasRedirected) {
+                hiddenLink.click();
+            }
+        }, 1200);
     }
 
     // Create app-specific links
