@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Magic Link - Open Social Apps</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Generate QR codes and deep links for social media profiles">
+    <meta name="description" content="Generate QR codes and deep links for social media profiles and Google reviews">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,6 +29,10 @@
                         instagram: {
                             light: '#E4405F',
                             dark: '#C13584'
+                        },
+                        google: {
+                            light: '#EA4335',
+                            dark: '#C53929'
                         }
                     },
                     animation: {
@@ -54,6 +58,11 @@
         /* Instagram gradient */
         .instagram-gradient {
             background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+
+        /* Google gradient */
+        .google-gradient {
+            background: linear-gradient(135deg, #EA4335 0%, #C53929 100%);
         }
 
         /* Animation for the arrow */
@@ -97,6 +106,14 @@
     <meta property="al:android:url" content="instagram://user?username=instagram" id="ig-android-url" />
     <meta property="al:android:package" content="com.instagram.android" />
     <meta property="al:android:app_name" content="Instagram" />
+
+    <!-- Google Maps App Links (will be updated dynamically) -->
+    <meta property="al:ios:url" content="comgooglemaps://?q=Google&center=37.422,-122.084" id="google-ios-url" />
+    <meta property="al:ios:app_store_id" content="585027354" />
+    <meta property="al:ios:app_name" content="Google Maps" />
+    <meta property="al:android:url" content="geo:37.422,-122.084?q=Google" id="google-android-url" />
+    <meta property="al:android:package" content="com.google.android.apps.maps" />
+    <meta property="al:android:app_name" content="Google Maps" />
 </head>
 
 <body class="gradient-background min-h-screen font-sans text-gray-100">
@@ -122,10 +139,10 @@
         <div class="p-6">
             <div class="text-center mb-8">
                 <h2 class="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Create Your Magic Link</h2>
-                <p class="text-gray-400">Generate a QR code and deep link for Facebook or Instagram profiles</p>
+                <p class="text-gray-400">Generate a QR code and deep link for social profiles and business reviews</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <!-- Facebook Option -->
                 <div id="facebook-option" onclick="selectPlatform('facebook')" class="cursor-pointer relative group overflow-hidden rounded-xl border border-white/10 hover:border-facebook-light/50 p-5 transition-all duration-300 bg-white/5 hover:bg-white/10">
                     <div class="hidden absolute inset-0 facebook-gradient opacity-0 group-hover:opacity-10 transition-opacity"></div>
@@ -149,6 +166,18 @@
                         <p class="text-gray-400 text-sm text-center">Open profiles in the Instagram app</p>
                     </div>
                 </div>
+
+                <!-- Google Review Option -->
+                <div id="google-option" onclick="selectPlatform('google')" class="cursor-pointer relative group overflow-hidden rounded-xl border border-white/10 hover:border-google-light/50 p-5 transition-all duration-300 bg-white/5 hover:bg-white/10">
+                    <div class="hidden absolute inset-0 google-gradient opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <div class="p-4 bg-google-light/10 rounded-full border border-google-light/30 transition-colors group-hover:bg-google-light/20">
+                            <i class="fab fa-google text-google-light text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-100">Google Review</h3>
+                        <p class="text-gray-400 text-sm text-center">Open direct review page for businesses</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Input Form -->
@@ -167,6 +196,13 @@
                         </p>
                         <p id="instagram-help" class="hidden">
                             <strong>For Instagram:</strong> Enter your Instagram username without the @ symbol (e.g., "zuck").
+                        </p>
+                        <p id="google-help" class="hidden">
+                            <strong>For Google Review:</strong> Enter the Place ID of the business you want to generate a review link for. You can find the Place ID by:
+                            <br><br>1. Go to <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" class="text-blue-400 hover:underline">Google's Place ID Finder</a>
+                            <br>2. Enter the business name in the search box
+                            <br>3. Select the correct business from the results
+                            <br>4. The Place ID will appear in the info window (e.g., "ChIJeYOr1FDfE0cRT0Pg74cnsKE")
                         </p>
                     </div>
 
@@ -249,7 +285,7 @@
 
 <footer class="container mx-auto px-4 py-6 mt-8">
     <div class="flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
-        <p>&copy; 2025 MagicLink - No affiliation with Facebook or Instagram</p>
+        <p>&copy; 2025 MagicLink - No affiliation with Facebook, Instagram, or Google</p>
         <div class="mt-4 md:mt-0">
             <a href="#" class="text-gray-400 hover:text-white mx-2">Privacy</a>
             <a href="#" class="text-gray-400 hover:text-white mx-2">Terms</a>
@@ -328,13 +364,14 @@
 
             if (fbIosUrl) fbIosUrl.setAttribute('content', `fb://profile/${id}`);
             if (fbAndroidUrl) fbAndroidUrl.setAttribute('content', `fb://profile/${id}`);
-        } else {
+        } else if (platform === 'instagram') {
             const igIosUrl = document.getElementById('ig-ios-url');
             const igAndroidUrl = document.getElementById('ig-android-url');
 
             if (igIosUrl) igIosUrl.setAttribute('content', `instagram://user?username=${id}`);
             if (igAndroidUrl) igAndroidUrl.setAttribute('content', `instagram://user?username=${id}`);
         }
+        // For Google Review, we'll handle it directly when opening the app
 
         // Generate the appropriate web fallback link
         const webLink = createWebLink(id, platform);
@@ -353,31 +390,42 @@
         // Update UI
         document.getElementById('facebook-option').classList.remove('ring-2', 'ring-facebook-light');
         document.getElementById('instagram-option').classList.remove('ring-2', 'ring-instagram-light');
+        document.getElementById('google-option').classList.remove('ring-2', 'ring-google-light');
 
         document.getElementById('platform-select-message').classList.add('hidden');
         document.getElementById('platform-input-container').classList.remove('hidden');
+
+        // Hide all help texts first
+        document.getElementById('facebook-help').classList.add('hidden');
+        document.getElementById('instagram-help').classList.add('hidden');
+        document.getElementById('google-help').classList.add('hidden');
+
+        // Reset app-specific styling
+        document.getElementById('open-app-link').classList.remove('facebook-gradient', 'instagram-gradient', 'google-gradient');
+        document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-instagram', 'fa-google');
 
         if (platform === 'facebook') {
             document.getElementById('facebook-option').classList.add('ring-2', 'ring-facebook-light');
             document.getElementById('profile-label').innerText = 'Facebook Profile ID or Username';
             document.getElementById('facebook-help').classList.remove('hidden');
-            document.getElementById('instagram-help').classList.add('hidden');
             document.getElementById('input-prefix').classList.add('hidden');
-            document.getElementById('open-app-link').classList.remove('instagram-gradient');
             document.getElementById('open-app-link').classList.add('facebook-gradient');
-            document.getElementById('app-icon').classList.remove('fa-instagram');
             document.getElementById('app-icon').classList.add('fa-facebook-f');
-        } else {
+        } else if (platform === 'instagram') {
             document.getElementById('instagram-option').classList.add('ring-2', 'ring-instagram-light');
             document.getElementById('profile-label').innerText = 'Instagram Username';
-            document.getElementById('facebook-help').classList.add('hidden');
             document.getElementById('instagram-help').classList.remove('hidden');
             document.getElementById('input-prefix').classList.remove('hidden');
             document.getElementById('input-prefix').innerText = '';
-            document.getElementById('open-app-link').classList.remove('facebook-gradient');
             document.getElementById('open-app-link').classList.add('instagram-gradient');
-            document.getElementById('app-icon').classList.remove('fa-facebook-f');
             document.getElementById('app-icon').classList.add('fa-instagram');
+        } else if (platform === 'google') {
+            document.getElementById('google-option').classList.add('ring-2', 'ring-google-light');
+            document.getElementById('profile-label').innerText = 'Google Place ID';
+            document.getElementById('google-help').classList.remove('hidden');
+            document.getElementById('input-prefix').classList.add('hidden');
+            document.getElementById('open-app-link').classList.add('google-gradient');
+            document.getElementById('app-icon').classList.add('fa-google');
         }
     }
 
@@ -396,10 +444,16 @@
             return;
         }
 
-        // Generate link based on platform
-        // Remove any # in the base URL to ensure parameters work correctly
-        const baseUrl = window.location.href.split(/[?#]/)[0];
-        const magicLink = `${baseUrl}?id=${encodeURIComponent(profileId)}&platform=${selectedPlatform}`;
+        let magicLink;
+
+        // For Google Reviews, create a direct review link
+        if (selectedPlatform === 'google') {
+            magicLink = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(profileId)}`;
+        } else {
+            // For social platforms, generate link based on our URL
+            const baseUrl = window.location.href.split(/[?#]/)[0];
+            magicLink = `${baseUrl}?id=${encodeURIComponent(profileId)}&platform=${selectedPlatform}`;
+        }
 
         // Store globally
         generatedLink = magicLink;
@@ -417,10 +471,13 @@
             openApp(profileId, selectedPlatform);
         });
 
+        // Update result title based on platform
         if (selectedPlatform === 'facebook') {
             document.getElementById('result-title').innerText = 'Your Facebook Magic Link';
-        } else {
+        } else if (selectedPlatform === 'instagram') {
             document.getElementById('result-title').innerText = 'Your Instagram Magic Link';
+        } else if (selectedPlatform === 'google') {
+            document.getElementById('result-title').innerText = 'Your Google Review Link';
         }
 
         // Generate QR code
@@ -481,16 +538,18 @@
     // Show redirect page with smooth transition
     function showRedirectPage(platform) {
         // Update text based on platform
-        document.getElementById('opening-text').innerText =
-            platform === 'facebook' ? 'Opening Facebook...' : 'Opening Instagram...';
-
-        // Update the app icon
         if (platform === 'facebook') {
-            document.getElementById('app-icon').classList.remove('fa-instagram');
+            document.getElementById('opening-text').innerText = 'Opening Facebook...';
+            document.getElementById('app-icon').classList.remove('fa-instagram', 'fa-google');
             document.getElementById('app-icon').classList.add('fa-facebook-f');
-        } else {
-            document.getElementById('app-icon').classList.remove('fa-facebook-f');
+        } else if (platform === 'instagram') {
+            document.getElementById('opening-text').innerText = 'Opening Instagram...';
+            document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-google');
             document.getElementById('app-icon').classList.add('fa-instagram');
+        } else if (platform === 'google') {
+            document.getElementById('opening-text').innerText = 'Opening Google Review...';
+            document.getElementById('app-icon').classList.remove('fa-facebook-f', 'fa-instagram');
+            document.getElementById('app-icon').classList.add('fa-google');
         }
 
         // Prevent body scrolling
@@ -525,8 +584,18 @@
         // Show the redirect page first before any redirects to prevent jumping
         showRedirectPage(platform);
 
-        const appLink = createAppLink(id, platform);
-        const webLink = createWebLink(id, platform);
+        let appLink;
+        let webLink;
+
+        if (platform === 'google') {
+            // For Google Reviews, we go directly to the review URL
+            webLink = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(id)}`;
+            // There's no direct deep link for Google reviews, so we use the web URL
+            appLink = webLink;
+        } else {
+            appLink = createAppLink(id, platform);
+            webLink = createWebLink(id, platform);
+        }
 
         const ua = navigator.userAgent.toLowerCase();
         hasRedirected = false;
@@ -534,6 +603,13 @@
         // Update manual button to always use web version as fallback
         document.getElementById('manual-open-btn').href = webLink;
 
+        // For Google Reviews, we simply redirect to the web URL since there's no special app handling needed
+        if (platform === 'google') {
+            window.location.href = webLink;
+            return;
+        }
+
+        // Standard app handling for Facebook and Instagram
         if (/iphone|ipad|ipod/.test(ua)) {
             // iOS handling
             if (platform === 'facebook') {
@@ -635,9 +711,12 @@
             } else {
                 return `fb://page/${id}`;
             }
-        } else {
+        } else if (platform === 'instagram') {
             // Instagram
             return `instagram://user?username=${id}`;
+        } else if (platform === 'google') {
+            // Google Review - there's no direct app deep link, so we use the web URL
+            return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(id)}`;
         }
     }
 
@@ -651,9 +730,12 @@
             } else {
                 return `https://www.facebook.com/${id}`;
             }
-        } else {
+        } else if (platform === 'instagram') {
             // Instagram
             return `https://www.instagram.com/${id}/`;
+        } else if (platform === 'google') {
+            // Google Review
+            return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(id)}`;
         }
     }
 
