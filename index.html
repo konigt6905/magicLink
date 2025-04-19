@@ -40,6 +40,7 @@
         }
     </script>
 
+    <!-- Custom CSS -->
     <style>
         .gradient-background {
             background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
@@ -65,7 +66,37 @@
         .float-animation {
             animation: float 2s ease-in-out infinite;
         }
+
+        /* Smooth transitions */
+        #redirect-page {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #redirect-page.opacity-100 {
+            opacity: 1;
+        }
+
+        /* Prevent body scrolling when modal is active */
+        body.modal-open {
+            overflow: hidden;
+        }
     </style>
+
+    <!-- Facebook App Links (will be updated dynamically) -->
+    <meta property="al:ios:url" content="fb://profile/YOUR_DEFAULT_PAGE_ID" id="fb-ios-url" />
+    <meta property="al:ios:app_store_id" content="284882215" />
+    <meta property="al:ios:app_name" content="Facebook" />
+    <meta property="al:android:url" content="fb://profile/YOUR_DEFAULT_PAGE_ID" id="fb-android-url" />
+    <meta property="al:android:package" content="com.facebook.katana" />
+    <meta property="al:android:app_name" content="Facebook" />
+
+    <!-- Instagram App Links (will be updated dynamically) -->
+    <meta property="al:ios:url" content="instagram://user?username=instagram" id="ig-ios-url" />
+    <meta property="al:ios:app_store_id" content="389801252" />
+    <meta property="al:ios:app_name" content="Instagram" />
+    <meta property="al:android:url" content="instagram://user?username=instagram" id="ig-android-url" />
+    <meta property="al:android:package" content="com.instagram.android" />
+    <meta property="al:android:app_name" content="Instagram" />
 </head>
 
 <body class="gradient-background min-h-screen font-sans text-gray-100">
@@ -228,11 +259,11 @@
 </footer>
 
 <!-- Redirect page for app opening (hidden) -->
-<div id="redirect-page" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/90 backdrop-blur-md hidden">
+<div id="redirect-page" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/90 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-8 max-w-md w-full shadow-2xl">
         <div class="text-center">
             <div class="w-16 h-16 mx-auto mb-6 rounded-full border-4 border-t-blue-400 border-blue-400/30 animate-spin"></div>
-            <h2 class="text-2xl font-bold mb-2" id="opening-text">Opening Facebook...</h2>
+            <h2 class="text-2xl font-bold mb-2" id="opening-text">Opening App...</h2>
             <p class="text-gray-300 mb-6" id="redirect-message">The app should open automatically on your device</p>
 
             <div class="mb-6">
@@ -286,24 +317,33 @@
         });
     });
 
-    // Handle direct linking (when accessing with parameters)
+    // Function to handle direct link parameters (URL or hash-based)
     function handleDirectLink(id, platform) {
-        // Show redirect page
-        document.getElementById('redirect-page').classList.remove('hidden');
+        selectedPlatform = platform;
 
-        // Update UI based on platform
-        if (platform === 'instagram') {
-            document.getElementById('opening-text').innerText = 'Opening Instagram...';
-            document.getElementById('app-icon').classList.remove('fa-facebook-f');
-            document.getElementById('app-icon').classList.add('fa-instagram');
+        // Update Meta tags dynamically based on the current ID
+        if (platform === 'facebook') {
+            const fbIosUrl = document.getElementById('fb-ios-url');
+            const fbAndroidUrl = document.getElementById('fb-android-url');
+
+            if (fbIosUrl) fbIosUrl.setAttribute('content', `fb://profile/${id}`);
+            if (fbAndroidUrl) fbAndroidUrl.setAttribute('content', `fb://profile/${id}`);
+        } else {
+            const igIosUrl = document.getElementById('ig-ios-url');
+            const igAndroidUrl = document.getElementById('ig-android-url');
+
+            if (igIosUrl) igIosUrl.setAttribute('content', `instagram://user?username=${id}`);
+            if (igAndroidUrl) igAndroidUrl.setAttribute('content', `instagram://user?username=${id}`);
         }
 
-        // Generate the appropriate link
-        const appLink = createAppLink(id, platform);
-        document.getElementById('manual-open-btn').href = appLink;
+        // Generate the appropriate web fallback link
+        const webLink = createWebLink(id, platform);
+        document.getElementById('manual-open-btn').href = webLink;
 
-        // Try to open the app
-        openApp(id, platform);
+        // Use a short timeout to make sure UI is ready before attempting to open the app
+        setTimeout(() => {
+            openApp(id, platform);
+        }, 100);
     }
 
     // Platform selection
@@ -438,147 +478,150 @@
         document.getElementById('profile-id').value = '';
     }
 
-    // Specialized function for opening Facebook on Android
-    function openFacebookOnAndroid(id) {
-        // Get the fallback web link
-        const webLink = createWebLink(id, 'facebook');
+    // Show redirect page with smooth transition
+    function showRedirectPage(platform) {
+        // Update text based on platform
+        document.getElementById('opening-text').innerText =
+            platform === 'facebook' ? 'Opening Facebook...' : 'Opening Instagram...';
 
-        // Method 1: Try custom URL scheme with fragment approach (works on many devices)
-        const fbSchemeUrl = `fb://page/?id=${id}`;
+        // Update the app icon
+        if (platform === 'facebook') {
+            document.getElementById('app-icon').classList.remove('fa-instagram');
+            document.getElementById('app-icon').classList.add('fa-facebook-f');
+        } else {
+            document.getElementById('app-icon').classList.remove('fa-facebook-f');
+            document.getElementById('app-icon').classList.add('fa-instagram');
+        }
 
-        // Method 2: Try profile specific scheme
-        const fbProfileUrl = `fb://profile/${id}`;
+        // Prevent body scrolling
+        document.body.classList.add('modal-open');
 
-        // Method 3: Try intent URI with package and fallbacks (most comprehensive)
-        const intentUri = `intent://facebook.com/${id}#Intent;scheme=https;package=com.facebook.katana;S.browser_fallback_url=${encodeURIComponent(webLink)};end`;
+        // Smooth transition
+        const redirectPage = document.getElementById('redirect-page');
+        redirectPage.classList.remove('hidden');
 
-        // Method 4: Alternative intent format for older Android versions
-        const alternateIntent = `intent://profile/${id}#Intent;scheme=fb;package=com.facebook.katana;end`;
+        // Trigger reflow before adding opacity
+        void redirectPage.offsetWidth;
 
-        // Try the most reliable method first
-        window.location.href = intentUri;
+        // Fade in
+        redirectPage.classList.add('opacity-100');
+    }
 
-        // Sequence through other methods with delays
+    // Hide redirect page with smooth transition
+    function hideRedirectPage() {
+        const redirectPage = document.getElementById('redirect-page');
+        redirectPage.classList.remove('opacity-100');
+
+        // Wait for transition to complete before hiding
         setTimeout(() => {
-            if (!hasRedirected) {
-                // Try alternate intent format
-                window.location.href = alternateIntent;
-
-                setTimeout(() => {
-                    if (!hasRedirected) {
-                        // Try profile URL
-                        window.location.href = fbProfileUrl;
-
-                        setTimeout(() => {
-                            if (!hasRedirected) {
-                                // Try page URL format
-                                window.location.href = fbSchemeUrl;
-
-                                // Final fallback to web already handled in main function
-                            }
-                        }, 300);
-                    }
-                }, 300);
-            }
+            redirectPage.classList.add('hidden');
+            // Allow body scrolling again
+            document.body.classList.remove('modal-open');
         }, 300);
     }
 
-    // Open app functionality
+    // Opening app functionality with improved UI handling
     function openApp(id, platform) {
+        // Show the redirect page first before any redirects to prevent jumping
+        showRedirectPage(platform);
+
         const appLink = createAppLink(id, platform);
         const webLink = createWebLink(id, platform);
 
         const ua = navigator.userAgent.toLowerCase();
         hasRedirected = false;
 
-        // Update manual button
+        // Update manual button to always use web version as fallback
         document.getElementById('manual-open-btn').href = webLink;
 
         if (/iphone|ipad|ipod/.test(ua)) {
             // iOS handling
-            tryOpenIOSApp(id, appLink, webLink, platform);
+            if (platform === 'facebook') {
+                // Use specialized iOS Facebook function (already calls showRedirectPage)
+                openFacebookOnIOS(id);
+            } else {
+                // Instagram handling - simpler approach
+                simplifiedAppOpen(appLink, webLink, 2000);
+            }
         } else if (/android/.test(ua)) {
             // Android handling
             if (platform === 'facebook') {
-                // Set up a specialized Android Facebook redirect approach
-                openFacebookOnAndroid(id);
+                // Simplified Android Facebook approach
+                simplifiedFacebookAndroid(id, webLink);
             } else {
-                // Use intent URI for Instagram on Android
+                // Simplified Instagram Android approach
                 const intentUri = `intent://instagram.com/${id}/#Intent;scheme=https;package=com.instagram.android;end`;
-                window.location.href = intentUri;
+                simplifiedAppOpen(intentUri, webLink, 2000);
             }
         } else {
-            // Desktop or unsupported - go to web version
+            // Desktop or unsupported - go to web version immediately
             window.location.href = webLink;
-            return;
         }
-
-        // Fallback to web page if app didn't open
-        setTimeout(() => {
-            if (!hasRedirected) {
-                hasRedirected = true;
-                window.location.href = webLink;
-            }
-        }, 2500);
     }
 
-    // Try multiple methods to open app on iOS
-    function tryOpenIOSApp(id, appLink, webLink, platform) {
-        // Method 1: Try using Universal Links with Apple's App Links / Universal Links approach
-        if (platform === 'facebook') {
-            // For Facebook, try multiple approaches
+    // Specialized function for opening Facebook on iOS with minimal UI disruption
+    function openFacebookOnIOS(id) {
+        // Set up for tracking redirect status
+        hasRedirected = false;
 
-            // First try the direct fb:// scheme
-            window.location.href = appLink;
+        // Get the fallback web link
+        const webLink = createWebLink(id, 'facebook');
 
-            // Then try alternate scheme for FB pages
+        // Show redirect UI first before any redirects
+        showRedirectPage('facebook');
+        document.getElementById('manual-open-btn').href = webLink;
+
+        // Create various Facebook URL formats
+        const fbProfileUrl = `fb://profile/${id}`;
+        const fbPageUrl = `fb://page/${id}`;
+        const fbProfilePhpUrl = `https://www.facebook.com/profile.php?id=${id}`;
+
+        // Simplified approach with just the most effective methods
+        // Use longer timeouts to prevent UI glitches
+
+        // First try the most reliable method - direct profile URL
+        setTimeout(() => {
+            window.location.href = fbProfileUrl;
+
+            // Then try the page URL format after a delay
             setTimeout(() => {
                 if (!hasRedirected) {
-                    // Try page link if this is potentially a page ID
-                    const fbPageLink = `fb://page/${id}`;
-                    window.location.href = fbPageLink;
-                }
-            }, 300);
+                    window.location.href = fbPageUrl;
 
-            // Try profile.php link approach
-            setTimeout(() => {
-                if (!hasRedirected) {
-                    window.location.href = `https://www.facebook.com/profile.php?id=${id}`;
+                    // Finally try the web universal link approach
+                    setTimeout(() => {
+                        if (!hasRedirected) {
+                            // If nothing worked, go to web
+                            window.location.href = webLink;
+                            hasRedirected = true;
+                        }
+                    }, 1500);
                 }
-            }, 600);
-        } else {
-            // For Instagram, simpler approach
-            window.location.href = appLink;
-        }
+            }, 1500);
+        }, 500);
+    }
 
-        // Method 2: Try iframe method with URL scheme
+    // Simplified method to reduce complexity
+    function simplifiedFacebookAndroid(id, webLink) {
+        // Use only the most reliable methods with increased timeouts
+        const intentUri = `intent://facebook.com/${id}#Intent;scheme=https;package=com.facebook.katana;S.browser_fallback_url=${encodeURIComponent(webLink)};end`;
+
+        // Try intent URL then fall back to web
+        simplifiedAppOpen(intentUri, webLink, 2000);
+    }
+
+    // Very simple app open with automatic fallback
+    function simplifiedAppOpen(appUrl, webUrl, timeout) {
+        // Try to open app
+        window.location.href = appUrl;
+
+        // Set fallback timer
         setTimeout(() => {
             if (!hasRedirected) {
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = appLink;
-                document.body.appendChild(iframe);
-
-                // Method 3: Try window.open
-                setTimeout(() => {
-                    if (!hasRedirected) {
-                        window.open(appLink, '_self');
-                    }
-                }, 300);
+                window.location.href = webUrl;
+                hasRedirected = true;
             }
-        }, 900);
-
-        // Add a hidden link and trigger a click (sometimes helps on iOS)
-        const hiddenLink = document.createElement('a');
-        hiddenLink.setAttribute('href', appLink);
-        hiddenLink.style.display = 'none';
-        document.body.appendChild(hiddenLink);
-
-        setTimeout(() => {
-            if (!hasRedirected) {
-                hiddenLink.click();
-            }
-        }, 1200);
+        }, timeout);
     }
 
     // Create app-specific links
@@ -612,11 +655,6 @@
             // Instagram
             return `https://www.instagram.com/${id}/`;
         }
-    }
-
-    // Hide redirect page
-    function hideRedirectPage() {
-        document.getElementById('redirect-page').classList.add('hidden');
     }
 
     // Track page visibility changes to detect app switch
